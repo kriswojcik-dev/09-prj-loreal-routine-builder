@@ -8,7 +8,11 @@
 /* —— body + fonts —— */
 body {
   font-family: "Montserrat", Arial, Helvetica, sans-serif;
-  color: #333;
+  color: #251a1d;
+  background: #fff8f4;
+  --brand-red: #ff003b;
+  --brand-gold: #e3a535;
+  --ink: #251a1d;
   display: flex;
   justify-content: center;
 }
@@ -26,7 +30,7 @@ body {
 }
 
 .logo {
-  width: 250px;
+  width: min(250px, 80%);
   margin-bottom: 15px;
 }
 
@@ -42,7 +46,8 @@ body {
   display: flex;
 }
 
-.search-section select {
+.search-section select,
+.search-section input[type="search"] {
   width: 100%;
   padding: 16px;
   font-size: 18px;
@@ -99,6 +104,7 @@ body {
 
 .chat-form input {
   flex: 1;
+  min-width: 0;
   padding: 12px;
   font-size: 18px;
   border: none;
@@ -172,45 +178,64 @@ body {
 
 /* products grid */
 .products-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 16px;
   margin: 30px 0;
 }
 
+/* The selection button and the disclosure have independent keyboard controls. */
 .product-card {
-  flex: 0 1 calc(33.333% - 14px);
-  border: 1px solid #ccc;
-  padding: 15px;
-  border-radius: 4px;
+  background: #fff;
+  border: 1px solid #ddced0;
+  border-radius: 12px;
+  min-width: 0;
+}
+
+.product-card:has([aria-pressed="true"]) {
+  border-color: var(--brand-red);
+  box-shadow: 0 0 0 2px var(--brand-red);
+  background: #fff1f4;
+}
+
+.product-select {
   display: flex;
-  gap: 15px;
-  min-height: 160px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  text-align: start;
 }
 
 .product-card img {
-  width: 110px;
-  height: 110px;
+  width: 76px;
+  height: 76px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
-.product-card .product-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 110px;
+.product-info {
+  display: grid;
+  gap: 5px;
+  overflow-wrap: anywhere;
 }
 
-.product-card h3 {
-  font-size: 16px;
-  margin-bottom: 8px;
+.product-info > span,
+.product-card details {
+  font-size: 0.875rem;
 }
 
-.product-card p {
-  font-size: 14px;
-  color: #666;
+.product-card details {
+  padding: 0 14px 14px;
+  line-height: 1.5;
+}
+
+.product-card details p {
+  margin-block-start: 6px;
 }
 
 /* selected products */
@@ -251,5 +276,122 @@ body {
 }
 
 .generate-btn i {
-  margin-right: 8px;
+  margin-inline-end: 8px;
+}
+
+/* Brand accents, responsive filters, and direction-aware spacing. */
+.site-header {
+  border-block-start: 4px solid var(--brand-red);
+  margin-block-start: 16px;
+}
+
+.search-section {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-section select,
+.search-section input[type="search"] {
+  flex: 1 1 220px;
+  min-width: 0;
+  color: var(--ink);
+  font: inherit;
+}
+
+.direction-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.selected-products,
+.chatbox {
+  background: white;
+  border: 1px solid #ddced0;
+  border-block-start: 4px solid var(--brand-gold);
+  border-radius: 12px;
+}
+
+#selectedProductsList {
+  list-style: none;
+}
+
+#selectedProductsList li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #fff4d9;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+
+button,
+summary {
+  cursor: pointer;
+}
+
+#selectedProductsList button,
+#clearProducts {
+  padding: 5px 8px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid #aa8c90;
+  border-radius: 6px;
+  font: inherit;
+}
+
+#clearProducts {
+  margin-block-start: 12px;
+}
+
+.generate-btn,
+.chat-form button {
+  background: var(--ink);
+  border-radius: 8px;
+}
+
+.generate-btn:hover:enabled,
+.chat-form button:hover:enabled {
+  background: #81102b;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.chat-window p {
+  margin-block-end: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.chat-window a {
+  color: #931430;
+}
+
+#chatStatus {
+  font-size: 0.9rem;
+}
+
+button:focus-visible,
+summary:focus-visible,
+.search-section :is(select, input):focus-visible,
+.chat-form input:focus-visible {
+  outline: 2px solid #931430;
+  outline-offset: 2px;
+}
+
+@media (max-width: 520px) {
+  .chatbox {
+    padding: 14px;
+  }
+
+  .chat-window {
+    padding: 12px;
+    font-size: 1rem;
+  }
 }

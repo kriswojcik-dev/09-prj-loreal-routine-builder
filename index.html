@@ -25,8 +25,12 @@
 
       <!-- Category Filter -->
       <div class="search-section">
+        <label for="productSearch" class="visually-hidden">Search products</label>
+        <input id="productSearch" type="search" placeholder="Search products or brands" />
+        <label for="categoryFilter" class="visually-hidden">Product category</label>
         <select id="categoryFilter">
-          <option value="" disabled selected>Choose a Category</option>
+          <option value="">All categories</option>
+          <option value="skincare">Skincare</option>
           <option value="cleanser">Cleansers</option>
           <option value="moisturizer">Moisturizers & Treatments</option>
           <option value="haircare">Haircare</option>
@@ -37,6 +41,7 @@
           <option value="suncare">Suncare</option>
           <option value="fragrance">Fragrance</option>
         </select>
+        <label class="direction-toggle"><input id="rtlToggle" type="checkbox" /> Right-to-left</label>
       </div>
 
       <!-- Products Grid -->
@@ -45,8 +50,9 @@
       <!-- Selected Products -->
       <div class="selected-products">
         <h2>Selected Products</h2>
-        <div id="selectedProductsList"></div>
-        <button id="generateRoutine" class="generate-btn">
+        <ul id="selectedProductsList"></ul>
+        <button id="clearProducts" type="button" disabled>Clear all</button>
+        <button id="generateRoutine" type="button" disabled class="generate-btn">
           <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Routine
         </button>
       </div>
@@ -54,7 +60,10 @@
       <!------- Chat Area ------->
       <section class="chatbox">
         <h2>Let's Build Your Routine</h2>
-        <div id="chatWindow" class="chat-window"></div>
+        <div id="chatWindow" class="chat-window" role="log" aria-label="Conversation">
+          <p>Choose products and generate a routine to start the conversation.</p>
+        </div>
+        <p id="chatStatus" role="status"></p>
 
         <form id="chatForm" class="chat-form">
           <label for="userInput" class="visually-hidden">Message</label>
@@ -64,9 +73,11 @@
             type="text"
             placeholder="Ask me about products or routines…"
             autocomplete="off"
+            dir="auto"
+            disabled
             required
           />
-          <button type="submit" id="sendBtn">
+          <button type="submit" id="sendBtn" disabled>
             <i class="fa-solid fa-paper-plane"></i>
             <span class="visually-hidden">Send</span>
           </button>
