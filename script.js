@@ -1,5 +1,5 @@
 /* Paste the class or assignment Worker URL here. The Worker holds the API key. */
-const workerUrl = "loreal-worker.kwojcik4.workers.dev";
+const workerUrl = "https://loreal-worker.kwojcik4.workers.dev/";
 const selectionKey = "loreal-selected-products";
 
 const categoryFilter = document.getElementById("categoryFilter");
