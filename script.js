@@ -139,9 +139,30 @@ clearProducts.addEventListener("click", () => {
   productSearch.focus();
 });
 
-document.getElementById("rtlToggle").addEventListener("change", (event) => {
-  document.documentElement.dir = event.target.checked ? "rtl" : "ltr";
-});
+/* Match the layout to the browser's preferred language on page load. */
+const rtlToggle = document.getElementById("rtlToggle");
+
+function usesRightToLeft(language) {
+  try {
+    const locale = new Intl.Locale(language);
+    const direction = locale.getTextInfo?.()?.direction;
+    if (direction) return direction === "rtl";
+
+    // Older browsers can still infer the script from the locale.
+    const rtlScripts = /^(Adlm|Arab|Hebr|Mand|Mend|Nkoo|Rohg|Samr|Syrc|Thaa|Yezi)$/;
+    return rtlScripts.test(locale.maximize().script);
+  } catch {
+    return false;
+  }
+}
+
+function setDirection(rightToLeft) {
+  document.documentElement.dir = rightToLeft ? "rtl" : "ltr";
+  rtlToggle.checked = rightToLeft;
+}
+
+setDirection(usesRightToLeft(navigator.languages?.[0] || navigator.language));
+rtlToggle.addEventListener("change", () => setDirection(rtlToggle.checked));
 
 function updateChatControls() {
   generateRoutine.disabled = waiting || !selectedIds.size;
