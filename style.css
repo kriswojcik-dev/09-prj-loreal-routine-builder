@@ -369,6 +369,47 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
+/* Formatted replies stay readable in either writing direction. */
+.chat-message {
+  margin-block-end: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.chat-author {
+  display: block;
+  margin-block-end: 0.25rem;
+}
+
+.chat-message > * + * {
+  margin-block-start: 0.5rem;
+}
+
+.chat-message p {
+  margin-block-end: 0;
+}
+
+.chat-message :is(ol, ul) {
+  padding-inline-start: 1.5em;
+}
+
+.chat-message :is(h3, h4, h5, h6) {
+  font-size: 1em;
+}
+
+.chat-message hr {
+  border: 0;
+  border-block-start: 1px solid #ddced0;
+}
+
+.chat-message blockquote {
+  border-inline-start: 3px solid var(--brand-gold);
+  padding-inline-start: 0.75em;
+}
+
+.chat-message pre {
+  white-space: pre-wrap;
+}
+
 .chat-window a {
   color: #931430;
 }

@@ -149,31 +149,164 @@ function updateChatControls() {
   sendBtn.disabled = userInput.disabled;
 }
 
-/* Add a message as text, with clickable inline citations when provided. */
-function addMessage(label, content, annotations = []) {
-  const line = document.createElement("p");
-  line.dir = "auto";
-  const heading = document.createElement("strong");
-  heading.textContent = `${label}: `;
-  line.append(heading);
+/* Use text nodes and safe links for the Markdown the advisor commonly returns. */
+function renderInline(parent, text, citations) {
+  const tokens = /\\([\\`*_{}\[\]()#+\-.!>|])|`([^`]+)`|\uE000(\d+)\uE001|\[([^\]\n]+)\]\((https?:\/\/[^\s()]+(?:\([^\s()]*\)[^\s()]*)*)\)|(\*\*\*|___|\*\*|__|~~|\*|_)(\S(?:.*?\S)?)\6/g;
   let position = 0;
-  const citations = annotations.filter(({ type }) => type === "url_citation")
+
+  for (const match of text.matchAll(tokens)) {
+    const [token, escaped, code, citationIndex, label, url, marker, emphasis] = match;
+    parent.append(text.slice(position, match.index));
+    position = match.index + token.length;
+
+    if (escaped) {
+      parent.append(escaped);
+    } else if (code) {
+      const element = document.createElement("code");
+      element.textContent = code;
+      parent.append(element);
+    } else if (citationIndex !== undefined || url) {
+      const citation = citations[Number(citationIndex)];
+      if (!citation && !url) {
+        parent.append(token);
+        continue;
+      }
+      const link = document.createElement("a");
+      link.href = citation?.url || url;
+      link.textContent = citation?.label || label;
+      if (citation?.title) link.title = citation.title;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      parent.append(link);
+    } else {
+      const tag = marker === "~~" ? "del" : marker.length > 1 ? "strong" : "em";
+      const element = document.createElement(tag);
+      const inner = marker.length === 3 ? document.createElement("em") : element;
+      renderInline(inner, emphasis, citations);
+      if (inner !== element) element.append(inner);
+      parent.append(element);
+    }
+  }
+
+  parent.append(text.slice(position));
+}
+
+function renderAdvisorMessage(parent, content, annotations) {
+  const sources = annotations.filter(({ type }) => type === "url_citation")
     .map((annotation) => annotation.url_citation || annotation)
     .sort((a, b) => a.start_index - b.start_index);
-  for (const citation of citations) {
-    const { start_index: start, end_index: end, url, title } = citation;
+  const citations = [];
+  let markdown = "";
+  let position = 0;
+  const characters = Array.from(content);
+
+  // Keep Unicode citation offsets aligned with the original reply.
+  for (const { start_index: start, end_index: end, url, title } of sources) {
     if (!Number.isInteger(start) || !Number.isInteger(end) ||
-        start < position || end <= start || end > content.length ||
-        !/^https?:\/\//i.test(url)) continue;
-    const link = document.createElement("a");
-    link.href = url;
-    link.textContent = content.slice(start, end);
-    if (title) link.title = title;
-    line.append(content.slice(position, start), link);
+        start < position || end <= start || end > characters.length ||
+        typeof url !== "string" || !/^https?:\/\//i.test(url)) continue;
+
+    let hostname;
+    try {
+      hostname = new URL(url).hostname.replace(/^www\./i, "");
+    } catch {
+      continue;
+    }
+
+    const citedText = characters.slice(start, end).join("");
+    const markdownLabel = citedText.match(/\[([^\]]+)\]\(https?:\/\//i)?.[1];
+    const plainLabel = /^[^\[\](){}<>]+$/.test(citedText) && !/https?:/i.test(citedText)
+      ? citedText.trim()
+      : "";
+    const label = markdownLabel || plainLabel || title || hostname;
+    markdown += characters.slice(position, start).join("");
+    markdown += `\uE000${citations.length}\uE001`;
+    citations.push({ url, title, label });
     position = end;
   }
-  line.append(content.slice(position));
-  chatWindow.append(line);
+  markdown += characters.slice(position).join("");
+
+  let list = null;
+  let paragraph = null;
+  let codeBlock = null;
+  const lines = markdown.split(/\r?\n/);
+
+  for (const line of lines) {
+    const text = line.trim();
+    const fence = /^(\x60{3,}|~{3,})/.test(text);
+    if (fence || codeBlock) {
+      list = null;
+      paragraph = null;
+      if (!fence) {
+        codeBlock.textContent += `${line}\n`;
+      } else if (codeBlock) {
+        codeBlock = null;
+      } else {
+        const pre = document.createElement("pre");
+        codeBlock = document.createElement("code");
+        pre.append(codeBlock);
+        parent.append(pre);
+      }
+      continue;
+    }
+
+    const heading = text.match(/^(#{1,6})\s+(.+?)(?:\s+#+)?$/);
+    const item = text.match(/^(?:([-+*])|(\d+)[.)])\s+(.+)$/);
+    const rule = /^(?:-\s*){3,}$|^(?:\*\s*){3,}$|^(?:_\s*){3,}$/.test(text);
+
+    if (item && !rule) {
+      paragraph = null;
+      const tag = item[2] ? "ol" : "ul";
+      if (list?.localName !== tag) {
+        list = document.createElement(tag);
+        if (item[2]) list.start = Number(item[2]);
+        parent.append(list);
+      }
+      const element = document.createElement("li");
+      renderInline(element, item[3], citations);
+      list.append(element);
+      continue;
+    }
+
+    list = null;
+    if (!text || rule || heading || /^>\s?/.test(text)) {
+      paragraph = null;
+      if (!text) continue;
+      const tag = rule ? "hr" : heading ? `h${Math.min(6, heading[1].length + 2)}` : "blockquote";
+      const element = document.createElement(tag);
+      if (!rule) renderInline(element, heading ? heading[2] : text.replace(/^>\s?/, ""), citations);
+      parent.append(element);
+      continue;
+    }
+
+    if (!paragraph) {
+      paragraph = document.createElement("p");
+      parent.append(paragraph);
+    } else {
+      paragraph.append(document.createElement("br"));
+    }
+    renderInline(paragraph, text, citations);
+  }
+}
+
+function addMessage(label, content, annotations = []) {
+  const message = document.createElement("div");
+  message.className = "chat-message";
+  message.dir = "auto";
+  const author = document.createElement("strong");
+  author.className = "chat-author";
+  author.textContent = label;
+  message.append(author);
+
+  if (label === "Advisor") {
+    renderAdvisorMessage(message, content, annotations);
+  } else {
+    const paragraph = document.createElement("p");
+    paragraph.textContent = content;
+    message.append(paragraph);
+  }
+
+  chatWindow.append(message);
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
